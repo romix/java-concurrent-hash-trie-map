@@ -9,7 +9,7 @@ Idea + implementation techniques can be found in these reports written by Aleksa
    *   http://lamp.epfl.ch/~prokopec/ctries-snapshot.pdf
 
 The original Scala implementation can be found here and is a part of scala.collection.concurrent:
-   *   [[Scala implementation][https://github.com/scala/scala/blob/930c85d6c96507d798d1847ea078eebf93dc0acb/src/library/scala/collection/concurrent/TrieMap.scala#L1]]
+   *   [Scala implementation](https://github.com/scala/scala/blob/930c85d6c96507d798d1847ea078eebf93dc0acb/src/library/scala/collection/concurrent/TrieMap.scala)
 
 Some of the tests and implementation details were borrowed from this project:
    *  https://github.com/flegall/concurrent-hash-trie
