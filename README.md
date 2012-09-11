@@ -5,8 +5,8 @@ This is a Java port of a concurrent trie hash map implementation from the Scala 
 conversion from Scala to Java.
 
 Idea + implementation techniques can be found in these reports written by Aleksandar Prokopec:
-   *   http://infoscience.epfl.ch/record/166908/files/ctries-techreport.pdf
-   *   http://lamp.epfl.ch/~prokopec/ctries-snapshot.pdf
+   * http://infoscience.epfl.ch/record/166908/files/ctries-techreport.pdf - this is a nice introduction to Ctries, along with a correctness proof
+   * http://lamp.epfl.ch/~prokopec/ctries-snapshot.pdf - a more up-to-date writeup which describes the snapshot operation
 
 The original Scala implementation can be found here and is a part of scala.collection.concurrent:
    *   [Scala implementation](https://github.com/scala/scala/blob/930c85d6c96507d798d1847ea078eebf93dc0acb/src/library/scala/collection/concurrent/TrieMap.scala)
@@ -22,7 +22,27 @@ Implementation status :
    *   This class implements all the ConcurrentMap & Iterator methods and passes all the tests. Can be used as a drop-in replacement
        for usual Java maps, including ConcurrentHashMap.
 
+
+What is a concurrent trie hash map also known as ctrie?
+========================================================
+ctrie is a lock-Free Concurrent Hash Array Mapped Trie.
+
+A concurrent hash-trie or Ctrie is a concurrent thread-safe lock-free implementation of a hash array mapped trie.
+ 
+It is used to implement the concurrent map abstraction. It has particularly scalable concurrent insert and remove operations 
+and is memory-efficient. 
+
+It supports O(1), atomic, lock-free snapshots which are used to implement linearizable lock-free size, iterator and clear operations. 
+The cost of evaluating the (lazy) snapshot is distributed across subsequent updates, thus making snapshot evaluation horizontally scalable.
+
+The original Scala-based implementation of the Ctrie is a part of the Scala standard library since the version 2.10.
+
+More info about Ctries:
+
+- http://infoscience.epfl.ch/record/166908/files/ctries-techreport.pdf - this is a nice introduction to Ctries, along with a correctness proof
+- http://lamp.epfl.ch/~prokopec/ctries-snapshot.pdf - a more up-to-date writeup (more coherent with the current version of the code) which describes the snapshot operation
        
+
 License
 ===============================
 
@@ -52,4 +72,9 @@ Using the library with Maven projects
 			<artifactId>java-concurrent-hash-trie-map</artifactId>
 		</dependency>
 
-    
+
+External dependencies
+=====================================
+This library is self-contained. It does not depend on any additional libraries. In particular, it does not require the rather big Scala's 
+standard library to be used.
+
