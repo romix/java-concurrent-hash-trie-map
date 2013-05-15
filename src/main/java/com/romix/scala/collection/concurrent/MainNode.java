@@ -28,7 +28,7 @@ abstract class MainNode<K, V> extends BasicNode {
 
     // do we need this? unclear in the javadocs...
     // apparently not - volatile reads are supposed to be safe
-    // irregardless of whether there are concurrent ARFU updates
+    // regardless of whether there are concurrent ARFU updates
     public MainNode<K, V> READ_PREV () {
         return updater.get (this);
     }
