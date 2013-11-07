@@ -1283,8 +1283,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         while (true) {
             INode<K, V> r = RDCSS_READ_ROOT ();
             if (!RDCSS_ROOT (r, r.gcasRead (this), INode.<K, V>newRootNode ())) {
-                // clear ();
                 continue;
+            }else{
+                return;
             }
         }
     }
