@@ -1321,8 +1321,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 //    }
 
     final public V get (Object k) {
-        int hc = computeHash ((K)k);
-        return (V)lookuphc ((K)k, hc);
+        return lookup((K)k);
     }
     
     final public Option<V> putOpt(Object key, Object value) {
