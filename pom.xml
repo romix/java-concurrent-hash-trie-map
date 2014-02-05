@@ -7,7 +7,7 @@
 	</parent>
 	<groupId>com.github.romix</groupId>
 	<artifactId>java-concurrent-hash-trie-map</artifactId>
-	<version>0.2.0</version>
+	<version>0.2.1-SNAPSHOT</version>
 	<name>TrieMap</name>
 	<description>Java implementation of a concurrent trie hash map from Scala collections library</description>
 	<url>https://github.com/romix/java-concurrent-hash-trie-map</url>
@@ -22,7 +22,7 @@
 		<url>https://github.com/romix/java-concurrent-hash-trie-map</url>
 		<connection>scm:git:https://github.com/romix/java-concurrent-hash-trie-map.git</connection>
 		<developerConnection>scm:git:https://github.com/romix/java-concurrent-hash-trie-map.git</developerConnection>
-	  <tag>java-concurrent-hash-trie-map-0.2.0</tag>
+	  <tag>HEAD</tag>
   </scm>
 	<developers>
 		<developer>
