@@ -67,9 +67,12 @@ Use a usual `mvn clean install`
 
 Using the library with Maven projects
 =====================================
+The prebuilt binaries of the library are available from Maven central. Please use the following dependency in your POM files:
+
 		<dependency>
-			<groupId>com.romix</groupId>
+			<groupId>com.github.romix</groupId>
 			<artifactId>java-concurrent-hash-trie-map</artifactId>
+			<version>0.2.0</version>
 		</dependency>
 
 
