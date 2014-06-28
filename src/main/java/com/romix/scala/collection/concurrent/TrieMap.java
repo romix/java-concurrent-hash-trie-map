@@ -1,10 +1,14 @@
 package com.romix.scala.collection.concurrent;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +30,10 @@ import com.romix.scala.Some;
  * @param <V>
  */
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
-public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,V>{
+public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,V>, Serializable {
     AtomicReferenceFieldUpdater<INodeBase, MainNode> inodeupdater = AtomicReferenceFieldUpdater.newUpdater (INodeBase.class, MainNode.class, "mainnode");
+
+    private static final long serialVersionUID = 6709477890622771297L;
 
     /**
      * EntrySet
@@ -967,7 +973,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     }
 
-    private static class Equiv<K> {
+    private static class Equiv<K> implements Serializable{
         public boolean equiv (K k1, K k2) {
             return k1.equals (k2);
         }
@@ -975,7 +981,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         static Equiv universal = new Equiv ();
     }
 
-    private static interface Hashing<K> {
+    private static interface Hashing<K> extends Serializable {
         public int hash (K k);
     }
 
@@ -1010,19 +1016,12 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     private volatile Object root;
 
-    TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
-        this.r = r;
-        this.rtupd = rtupd;
-        this.hashf = hashf;
-        this.ef = ef;
-        this.hashingobj = (hashf instanceof Default) ? hashf : hashf;
-        equalityobj = ef;
-        rootupdater = rtupd;
-        root = r;
+    TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
+        constructor(INode.newRootNode(), AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root"), hashf, ef);
     }
 
     public TrieMap (final Hashing<K> hashf, final Equiv<K> ef) {
-        this (INode.newRootNode (), AtomicReferenceFieldUpdater.newUpdater (TrieMap.class, Object.class, "root"), hashf, ef);
+        this(INode.newRootNode(), AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root"), hashf, ef);
     }
 
     public TrieMap () {
@@ -1760,5 +1759,48 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         public final void clear () {
             TrieMap.this.clear ();
         }
+    }
+
+    private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
+        final Hashing<K> hashf = (Hashing<K>) inputStream.readObject();
+        final Equiv<K> ef = (Equiv<K>) inputStream.readObject();
+
+        constructor(INode.newRootNode(), AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root"), hashf, ef);
+
+        HashMap<K,V> copy = (HashMap<K,V>) inputStream.readObject();
+
+        for(Entry<K,V> entry : copy.entrySet()){
+            add(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void writeObject(ObjectOutputStream outputStream) throws IOException {
+        outputStream.writeObject(hashf);
+        outputStream.writeObject(ef);
+
+        Set<Entry<K,V>> entries = this.entrySet();
+
+        // FIXME : Constructing a HashMap by passing the TrieMap to it causes a StackOverFlowError
+        //HashMap<K,V> copy = new HashMap<K, V>(this);
+
+        HashMap<K,V> copy = new HashMap<K, V>();
+
+        for(Entry<K,V> entry : entries){
+            copy.put(entry.getKey(), entry.getValue());
+        }
+
+        outputStream.writeObject(copy);
+    }
+
+    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
+        this.r = r;
+        this.rtupd = rtupd;
+        this.hashf = hashf;
+        this.ef = ef;
+        this.hashingobj = (hashf instanceof Default) ? hashf : hashf;
+        equalityobj = ef;
+        rootupdater = rtupd;
+        root = r;
+
     }
 }
