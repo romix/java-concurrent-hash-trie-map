@@ -31,8 +31,6 @@ import com.romix.scala.Some;
  */
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,V>, Serializable {
-    AtomicReferenceFieldUpdater<INodeBase, MainNode> inodeupdater = AtomicReferenceFieldUpdater.newUpdater (INodeBase.class, MainNode.class, "mainnode");
-
     private static final long serialVersionUID = 6709477890622771297L;
 
     /**
@@ -998,7 +996,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     private Object r;
-    private AtomicReferenceFieldUpdater<TrieMap, Object> rtupd;
     private Hashing<K> hashf;
     private Equiv<K> ef;
 
@@ -1014,6 +1011,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         return equalityobj;
     }
 
+    private static final AtomicReferenceFieldUpdater<TrieMap, Object> DEFAULT_ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root");
     private volatile Object root;
 
     TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
@@ -1021,7 +1019,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     public TrieMap (final Hashing<K> hashf, final Equiv<K> ef) {
-        this(INode.newRootNode(), AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root"), hashf, ef);
+        this(INode.newRootNode(), DEFAULT_ROOT_UPDATER, hashf, ef);
     }
 
     public TrieMap () {
@@ -1765,7 +1763,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         final Hashing<K> hashf = (Hashing<K>) inputStream.readObject();
         final Equiv<K> ef = (Equiv<K>) inputStream.readObject();
 
-        constructor(INode.newRootNode(), AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root"), hashf, ef);
+        constructor(INode.newRootNode(), DEFAULT_ROOT_UPDATER, hashf, ef);
 
         HashMap<K,V> copy = (HashMap<K,V>) inputStream.readObject();
 
@@ -1794,7 +1792,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
         this.r = r;
-        this.rtupd = rtupd;
         this.hashf = hashf;
         this.ef = ef;
         this.hashingobj = (hashf instanceof Default) ? hashf : hashf;
