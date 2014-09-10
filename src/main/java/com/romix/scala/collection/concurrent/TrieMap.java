@@ -31,7 +31,7 @@ import com.romix.scala.Some;
  */
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,V>, Serializable {
-    private static final long serialVersionUID = 6709477890622771297L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * EntrySet
@@ -1764,24 +1764,35 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
+        final boolean ro = inputStream.readBoolean();
+        final int size = inputStream.readInt();
         final Hashing<K> hashf = (Hashing<K>) inputStream.readObject();
         final Equiv<K> ef = (Equiv<K>) inputStream.readObject();
 
         constructor(INode.newRootNode(), DEFAULT_ROOT_UPDATER, hashf, ef);
 
-        HashMap<K,V> copy = (HashMap<K,V>) inputStream.readObject();
+        for (int i = 0; i < size; ++i) {
+            final K key = (K)inputStream.readObject();
+            final V value = (V)inputStream.readObject();
+            add(key, value);
+        }
 
-        for(Entry<K,V> entry : copy.entrySet()){
-            add(entry.getKey(), entry.getValue());
+        if (ro) {
+            rootupdater = null;
         }
     }
 
     private void writeObject(ObjectOutputStream outputStream) throws IOException {
+        final Map<K, V> ro = readOnlySnapshot();
+        outputStream.writeBoolean(isReadOnly());
+        outputStream.writeInt(ro.size());
         outputStream.writeObject(hashf);
         outputStream.writeObject(ef);
 
-        HashMap<K,V> copy = new HashMap<K, V>(readOnlySnapshot());
-        outputStream.writeObject(copy);
+        for (Entry<K, V> e : ro.entrySet()) {
+            outputStream.writeObject(e.getKey());
+            outputStream.writeObject(e.getValue());
+        }
     }
 
     private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
