@@ -973,7 +973,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     }
 
-    private static class Equiv<K> implements Serializable{
+    private static class Equiv<K> implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         public boolean equiv (K k1, K k2) {
             return k1.equals (k2);
         }
@@ -986,6 +988,8 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     static class Default<K> implements Hashing<K> {
+        private static final long serialVersionUID = 1L;
+
         public int hash (K k) {
             int h = k.hashCode ();
             // This function ensures that hashCodes that differ only by
@@ -1017,7 +1021,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     private volatile Object root;
 
     TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
-        constructor(INode.newRootNode(), AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root"), hashf, ef);
+        constructor(r, rtupd, hashf, ef);
     }
 
     public TrieMap (final Hashing<K> hashf, final Equiv<K> ef) {
@@ -1778,21 +1782,11 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         outputStream.writeObject(hashf);
         outputStream.writeObject(ef);
 
-        Set<Entry<K,V>> entries = this.entrySet();
-
-        // FIXME : Constructing a HashMap by passing the TrieMap to it causes a StackOverFlowError
-        //HashMap<K,V> copy = new HashMap<K, V>(this);
-
-        HashMap<K,V> copy = new HashMap<K, V>();
-
-        for(Entry<K,V> entry : entries){
-            copy.put(entry.getKey(), entry.getValue());
-        }
-
+        HashMap<K,V> copy = new HashMap<K, V>(readOnlySnapshot());
         outputStream.writeObject(copy);
     }
 
-    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
+    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
         this.r = r;
         this.rtupd = rtupd;
         this.hashf = hashf;
@@ -1801,6 +1795,5 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         equalityobj = ef;
         rootupdater = rtupd;
         root = r;
-
     }
 }
