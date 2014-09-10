@@ -36,7 +36,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     /**
      * EntrySet
      */
-    private final EntrySet entrySet = new EntrySet ();
+    private transient final EntrySet entrySet = new EntrySet ();
     
     public static <K,V> TrieMap<K,V> empty () {
         return new TrieMap<K,V> ();
@@ -999,13 +999,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
     }
 
-    private Object r;
-    private Hashing<K> hashf;
-    private Equiv<K> ef;
-
-    private Hashing<K> hashingobj;
-    private Equiv<K> equalityobj;
-    private AtomicReferenceFieldUpdater<TrieMap, Object> rootupdater;
+    private final Hashing<K> hashingobj;
+    private final Equiv<K> equalityobj;
+    private transient AtomicReferenceFieldUpdater<TrieMap, Object> rootupdater;
 
     Hashing<K> hashing () {
         return hashingobj;
@@ -1016,10 +1012,12 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     private static final AtomicReferenceFieldUpdater<TrieMap, Object> DEFAULT_ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root");
-    private volatile Object root;
+    private transient volatile Object root;
 
-    TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
-        constructor(r, rtupd, hashf, ef);
+    TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
+        this.hashingobj = hashf;
+        this.equalityobj = ef;
+        constructor(r, rtupd);
     }
 
     public TrieMap (final Hashing<K> hashf, final Equiv<K> ef) {
@@ -1764,13 +1762,11 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
+        inputStream.defaultReadObject();
+        constructor(INode.newRootNode(), DEFAULT_ROOT_UPDATER);
+
         final boolean ro = inputStream.readBoolean();
         final int size = inputStream.readInt();
-        final Hashing<K> hashf = (Hashing<K>) inputStream.readObject();
-        final Equiv<K> ef = (Equiv<K>) inputStream.readObject();
-
-        constructor(INode.newRootNode(), DEFAULT_ROOT_UPDATER, hashf, ef);
-
         for (int i = 0; i < size; ++i) {
             final K key = (K)inputStream.readObject();
             final V value = (V)inputStream.readObject();
@@ -1783,11 +1779,11 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     private void writeObject(ObjectOutputStream outputStream) throws IOException {
+        outputStream.defaultWriteObject();
+
         final Map<K, V> ro = readOnlySnapshot();
         outputStream.writeBoolean(isReadOnly());
         outputStream.writeInt(ro.size());
-        outputStream.writeObject(hashf);
-        outputStream.writeObject(ef);
 
         for (Entry<K, V> e : ro.entrySet()) {
             outputStream.writeObject(e.getKey());
@@ -1795,12 +1791,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
     }
 
-    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
-        this.r = r;
-        this.hashf = hashf;
-        this.ef = ef;
-        this.hashingobj = (hashf instanceof Default) ? hashf : hashf;
-        equalityobj = ef;
+    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd) {
         rootupdater = rtupd;
         root = r;
     }
