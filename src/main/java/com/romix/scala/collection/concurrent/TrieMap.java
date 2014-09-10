@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -16,7 +17,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 import com.romix.scala.None;
 import com.romix.scala.Option;
 import com.romix.scala.Some;
@@ -31,7 +31,22 @@ import com.romix.scala.Some;
  */
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,V>, Serializable {
+    private static final AtomicReferenceFieldUpdater<TrieMap, Object> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root");
     private static final long serialVersionUID = 1L;
+    private static final Field READONLY_FIELD;
+
+    static {
+        final Field f;
+        try {
+            f = TrieMap.class.getDeclaredField("readOnly");
+        } catch (NoSuchFieldException e) {
+            throw new ExceptionInInitializerError(e);
+        } catch (SecurityException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+        f.setAccessible(true);
+        READONLY_FIELD = f;
+    }
 
     /**
      * EntrySet
@@ -1001,7 +1016,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     private final Hashing<K> hashingobj;
     private final Equiv<K> equalityobj;
-    private transient AtomicReferenceFieldUpdater<TrieMap, Object> rootupdater;
 
     Hashing<K> hashing () {
         return hashingobj;
@@ -1011,17 +1025,22 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         return equalityobj;
     }
 
-    private static final AtomicReferenceFieldUpdater<TrieMap, Object> DEFAULT_ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root");
     private transient volatile Object root;
+    private final transient boolean readOnly;
 
-    TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
+    TrieMap (final Hashing<K> hashf, final Equiv<K> ef, final boolean readOnly) {
         this.hashingobj = hashf;
         this.equalityobj = ef;
-        constructor(r, rtupd);
+        this.readOnly = readOnly;
+    }
+
+    TrieMap (final Object r, final Hashing<K> hashf, final Equiv<K> ef, boolean readOnly) {
+        this(hashf, ef, readOnly);
+        this.root = r;
     }
 
     public TrieMap (final Hashing<K> hashf, final Equiv<K> ef) {
-        this(INode.newRootNode(), DEFAULT_ROOT_UPDATER, hashf, ef);
+        this(INode.newRootNode(), hashf, ef, false);
     }
 
     public TrieMap () {
@@ -1063,7 +1082,10 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     // }
 
     final boolean CAS_ROOT (Object ov, Object nv) {
-        return rootupdater.compareAndSet (this, ov, nv);
+        if (isReadOnly()) {
+            throw new IllegalStateException("Attempted to modify a read-only snapshot");
+        }
+        return ROOT_UPDATER.compareAndSet (this, ov, nv);
     }
 
     // FIXME: abort = false by default
@@ -1216,11 +1238,11 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     // }
 
     final boolean isReadOnly () {
-        return rootupdater == null;
+        return readOnly;
     }
 
     final boolean nonReadOnly () {
-        return rootupdater != null;
+        return !readOnly;
     }
 
     /**
@@ -1239,7 +1261,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             INode<K, V> r = RDCSS_READ_ROOT ();
             final MainNode<K, V> expmain = r.gcasRead (this);
             if (RDCSS_ROOT (r, expmain, r.copyToGen (new Gen (), this)))
-                return new TrieMap<K, V> (r.copyToGen (new Gen (), this), rootupdater, hashing (), equality ());
+                return new TrieMap<K, V> (r.copyToGen (new Gen (), this), hashing (), equality (), readOnly);
             else {
                 // return snapshot ();
                 // tailrec
@@ -1270,7 +1292,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             INode<K, V> r = RDCSS_READ_ROOT ();
             MainNode<K, V> expmain = r.gcasRead (this);
             if (RDCSS_ROOT (r, expmain, r.copyToGen (new Gen (), this)))
-                return new TrieMap<K, V> (r, null, hashing (), equality ());
+                return new TrieMap<K, V> (r, hashing (), equality (), true);
             else {
                 // return readOnlySnapshot ();
                 continue;
@@ -1763,7 +1785,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
         inputStream.defaultReadObject();
-        constructor(INode.newRootNode(), DEFAULT_ROOT_UPDATER);
+        this.root = INode.newRootNode();
 
         final boolean ro = inputStream.readBoolean();
         final int size = inputStream.readInt();
@@ -1773,8 +1795,11 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             add(key, value);
         }
 
-        if (ro) {
-            rootupdater = null;
+        // Propagate the read-only bit
+        try {
+            READONLY_FIELD.setBoolean(this, ro);
+        } catch (IllegalAccessException e) {
+            throw new IOException("Failed to set read-only flag", e);
         }
     }
 
@@ -1789,10 +1814,5 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             outputStream.writeObject(e.getKey());
             outputStream.writeObject(e.getValue());
         }
-    }
-
-    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd) {
-        rootupdater = rtupd;
-        root = r;
     }
 }
