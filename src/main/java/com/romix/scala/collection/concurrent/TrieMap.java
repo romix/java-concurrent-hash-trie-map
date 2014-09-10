@@ -1200,6 +1200,16 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
     }
 
+    /**
+     * Ensure this instance is read-write, throw UnsupportedOperationException
+     * otherwise. Used by Map-type methods for quick check.
+     */
+    private void ensureReadWrite() {
+        if (isReadOnly()) {
+            throw new UnsupportedOperationException("Attempted to modify a read-only view");
+        }
+    }
+
     public String string () {
         // RDCSS_READ_ROOT().string(0);
         return "Root";
@@ -1331,7 +1341,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         return insertifhc ((K)key, hc, (V)value, null);
     }
 
+    @Override
     final public V put (Object key, Object value) {
+        ensureReadWrite();
         int hc = computeHash ((K)key);
         Option<V> ov = insertifhc ((K)key, hc, (V)value, null);
         if(ov instanceof Some) {
@@ -1356,7 +1368,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         return removehc (k, (V) null, hc);
     }
 
+    @Override
     final public V remove (Object k) {
+        ensureReadWrite();
         int hc = computeHash ((K)k);
         Option<V> ov = removehc ((K)k, (V) null, hc);
         if(ov instanceof Some) {
@@ -1376,7 +1390,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         return insertifhc (k, hc, v, INode.KEY_ABSENT);
     }
 
+    @Override
     final public V putIfAbsent (Object k, Object v) {
+        ensureReadWrite();
         int hc = computeHash ((K)k);
         Option<V> ov = insertifhc ((K)k, hc, (V)v, INode.KEY_ABSENT);
         if(ov instanceof Some) {
@@ -1386,12 +1402,16 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             return null;
     }
     
+    @Override
     public boolean remove (Object k, Object v) {
+        ensureReadWrite();
         int hc = computeHash ((K)k);
         return removehc ((K)k, (V)v, hc).nonEmpty ();
     }
 
+    @Override
     public boolean replace (K k, V oldvalue, V newvalue) {
+        ensureReadWrite();
         int hc = computeHash (k);
         return insertifhc (k, hc, newvalue, (Object) oldvalue).nonEmpty ();
     }
@@ -1401,7 +1421,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         return insertifhc (k, hc, v, INode.KEY_PRESENT);
     }
 
+    @Override
     public V replace (Object k, Object v) {
+        ensureReadWrite();
         int hc = computeHash ((K)k);
         Option<V> ov = insertifhc ((K)k, hc, (V)v, INode.KEY_PRESENT);
         if(ov instanceof Some) {
@@ -1478,9 +1500,8 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
         
         public void remove () {
-            throw new RuntimeException ("Operation not supported for read-only iterators");
+            throw new UnsupportedOperationException ("Operation not supported for read-only iterators");
         }
-        
         
         Map.Entry<K, V> nextEntry(final Map.Entry<K, V> rr) {
             // Return non-updatable entry
