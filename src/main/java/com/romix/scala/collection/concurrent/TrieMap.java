@@ -51,8 +51,8 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     // }
 
     static class INode<K, V> extends INodeBase<K, V> {
-        static Object KEY_PRESENT = new Object ();
-        static Object KEY_ABSENT = new Object ();
+        static final Object KEY_PRESENT = new Object ();
+        static final Object KEY_ABSENT = new Object ();
 
         static <K,V> INode<K,V> newRootNode () {
             Gen gen = new Gen ();
