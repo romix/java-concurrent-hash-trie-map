@@ -13,12 +13,14 @@ import org.junit.Test;
 public class TestSerialization {
     @Test
     public void testSerialization() throws IOException, ClassNotFoundException {
-        TrieMap<String, String> expected = new TrieMap<String, String>();
+        TrieMap<String, String> map = new TrieMap<String, String>();
 
-        expected.put("dude-0", "tom");
-        expected.put("dude-1", "john");
-        expected.put("dude-3", "ravi");
-        expected.put("dude-4", "alex");
+        map.put("dude-0", "tom");
+        map.put("dude-1", "john");
+        map.put("dude-3", "ravi");
+        map.put("dude-4", "alex");
+
+        TrieMap<String, String> expected = map.readOnlySnapshot();
 
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final ObjectOutputStream oos = new ObjectOutputStream(bos);
