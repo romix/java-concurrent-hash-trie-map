@@ -1,14 +1,18 @@
 package com.romix.scala.collection.concurrent;
 
-import junit.framework.Assert;
-import org.junit.Test;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-import java.io.*;
-import java.util.Map;
+import junit.framework.Assert;
+
+import org.junit.Test;
 
 public class TestSerialization {
     @Test
-    public void testSerialization() throws Exception{
+    public void testSerialization() throws IOException, ClassNotFoundException {
         TrieMap<String, String> expected = new TrieMap<String, String>();
 
         expected.put("dude-0", "tom");
@@ -16,32 +20,19 @@ public class TestSerialization {
         expected.put("dude-3", "ravi");
         expected.put("dude-4", "alex");
 
-        writeObject(expected, "/tmp/dudes.ser");
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(expected);
+        oos.close();
 
-        TrieMap<String, String> actual = (TrieMap<String, String>) readObject("/tmp/dudes.ser");
+        final byte[] bytes = bos.toByteArray();
+        final ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+        final ObjectInputStream ois = new ObjectInputStream(bis);
 
-        for(Map.Entry<String, String> entry : expected.entrySet()){
-            Assert.assertEquals(entry.getValue(), actual.get(entry.getKey()));
-        }
+        @SuppressWarnings("unchecked")
+        final TrieMap<String, String> actual = (TrieMap<String, String>) ois.readObject();
+        ois.close();
 
-    }
-
-    private Object readObject(String path) throws Exception{
-        FileInputStream fileIn =
-                new FileInputStream(path);
-        ObjectInputStream in = new ObjectInputStream(fileIn);
-        Object o = in.readObject();
-        in.close();
-        fileIn.close();
-        return o;
-    }
-
-    private void writeObject(Object o, String path) throws Exception{
-        FileOutputStream fileOut =
-                new FileOutputStream(path);
-        ObjectOutputStream out = new ObjectOutputStream(fileOut);
-        out.writeObject(o);
-        out.close();
-        fileOut.close();
+        Assert.assertEquals(expected, actual);
     }
 }

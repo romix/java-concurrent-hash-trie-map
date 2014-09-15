@@ -31,12 +31,12 @@ import com.romix.scala.Some;
  */
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,V>, Serializable {
-    private static final long serialVersionUID = 6709477890622771297L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * EntrySet
      */
-    private final EntrySet entrySet = new EntrySet ();
+    private transient final EntrySet entrySet = new EntrySet ();
     
     public static <K,V> TrieMap<K,V> empty () {
         return new TrieMap<K,V> ();
@@ -999,13 +999,9 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
     }
 
-    private Object r;
-    private Hashing<K> hashf;
-    private Equiv<K> ef;
-
-    private Hashing<K> hashingobj;
-    private Equiv<K> equalityobj;
-    private AtomicReferenceFieldUpdater<TrieMap, Object> rootupdater;
+    private final Hashing<K> hashingobj;
+    private final Equiv<K> equalityobj;
+    private transient AtomicReferenceFieldUpdater<TrieMap, Object> rootupdater;
 
     Hashing<K> hashing () {
         return hashingobj;
@@ -1016,10 +1012,12 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     private static final AtomicReferenceFieldUpdater<TrieMap, Object> DEFAULT_ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root");
-    private volatile Object root;
+    private transient volatile Object root;
 
-    TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef){
-        constructor(r, rtupd, hashf, ef);
+    TrieMap (final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
+        this.hashingobj = hashf;
+        this.equalityobj = ef;
+        constructor(r, rtupd);
     }
 
     public TrieMap (final Hashing<K> hashf, final Equiv<K> ef) {
@@ -1785,32 +1783,36 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
-        final Hashing<K> hashf = (Hashing<K>) inputStream.readObject();
-        final Equiv<K> ef = (Equiv<K>) inputStream.readObject();
+        inputStream.defaultReadObject();
+        constructor(INode.newRootNode(), DEFAULT_ROOT_UPDATER);
 
-        constructor(INode.newRootNode(), DEFAULT_ROOT_UPDATER, hashf, ef);
+        final boolean ro = inputStream.readBoolean();
+        final int size = inputStream.readInt();
+        for (int i = 0; i < size; ++i) {
+            final K key = (K)inputStream.readObject();
+            final V value = (V)inputStream.readObject();
+            add(key, value);
+        }
 
-        HashMap<K,V> copy = (HashMap<K,V>) inputStream.readObject();
-
-        for(Entry<K,V> entry : copy.entrySet()){
-            add(entry.getKey(), entry.getValue());
+        if (ro) {
+            rootupdater = null;
         }
     }
 
     private void writeObject(ObjectOutputStream outputStream) throws IOException {
-        outputStream.writeObject(hashf);
-        outputStream.writeObject(ef);
+        outputStream.defaultWriteObject();
 
-        HashMap<K,V> copy = new HashMap<K, V>(readOnlySnapshot());
-        outputStream.writeObject(copy);
+        final Map<K, V> ro = readOnlySnapshot();
+        outputStream.writeBoolean(isReadOnly());
+        outputStream.writeInt(ro.size());
+
+        for (Entry<K, V> e : ro.entrySet()) {
+            outputStream.writeObject(e.getKey());
+            outputStream.writeObject(e.getValue());
+        }
     }
 
-    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd, final Hashing<K> hashf, final Equiv<K> ef) {
-        this.r = r;
-        this.hashf = hashf;
-        this.ef = ef;
-        this.hashingobj = (hashf instanceof Default) ? hashf : hashf;
-        equalityobj = ef;
+    private void constructor(final Object r, final AtomicReferenceFieldUpdater<TrieMap, Object> rtupd) {
         rootupdater = rtupd;
         root = r;
     }
