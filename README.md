@@ -72,7 +72,7 @@ The prebuilt binaries of the library are available from Maven central. Please us
 		<dependency>
 			<groupId>com.github.romix</groupId>
 			<artifactId>java-concurrent-hash-trie-map</artifactId>
-			<version>0.2.1</version>
+			<version>0.2.23</version>
 		</dependency>
 
 
