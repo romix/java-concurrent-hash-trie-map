@@ -34,6 +34,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     private static final AtomicReferenceFieldUpdater<TrieMap, Object> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root");
     private static final long serialVersionUID = 1L;
     private static final Field READONLY_FIELD;
+    private static final TrieMap EMPTY = new TrieMap();
 
     static {
         final Field f;
@@ -54,7 +55,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     private transient final EntrySet entrySet = new EntrySet ();
     
     public static <K,V> TrieMap<K,V> empty () {
-        return new TrieMap<K,V> ();
+        return EMPTY;
     }
 
     // static class MangledHashing<K> extends Hashing<K> {
