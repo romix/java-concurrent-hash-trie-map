@@ -3,7 +3,7 @@ package com.romix.scala.collection.concurrent;
 import org.junit.Test;
 
 public class TestInstantiationSpeed {
-    private static final int COUNT = 1000000;
+    private static final int COUNT = 100000;
     private static final int ITERATIONS = 10;
     private static final int WARMUP = 20;
 
