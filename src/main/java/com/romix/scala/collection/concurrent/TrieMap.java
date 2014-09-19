@@ -34,7 +34,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     private static final AtomicReferenceFieldUpdater<TrieMap, Object> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class, Object.class, "root");
     private static final long serialVersionUID = 1L;
     private static final Field READONLY_FIELD;
-    private static final TrieMap EMPTY = new TrieMap();
 
     static {
         final Field f;
@@ -55,7 +54,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     private transient final EntrySet entrySet = new EntrySet ();
     
     public static <K,V> TrieMap<K,V> empty () {
-        return EMPTY;
+        return new TrieMap<K, V>();
     }
 
     // static class MangledHashing<K> extends Hashing<K> {
@@ -994,7 +993,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             return k1.equals (k2);
         }
 
-        static Equiv universal = new Equiv ();
+        static final Equiv universal = new Equiv ();
     }
 
     private static interface Hashing<K> extends Serializable {
@@ -1013,6 +1012,8 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             h ^= (h >>> 7) ^ (h >>> 4);
             return h;
         }
+
+        static final Default instance = new Default ();
     }
 
     private final Hashing<K> hashingobj;
@@ -1045,7 +1046,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     public TrieMap () {
-        this (new Default<K> (), Equiv.universal);
+        this (Default.instance, Equiv.universal);
     }
 
     /* internal methods */
