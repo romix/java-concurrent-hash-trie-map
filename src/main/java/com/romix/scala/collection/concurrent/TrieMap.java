@@ -447,8 +447,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                     return cleanReadOnly ((TNode<K, V>) m, lev, parent, ct, k, hc);
                 } else if (m instanceof LNode) {
                     // 5) an l-node
-                    Option<V> tmp = ((LNode<K, V>) m).get (k);
-                    return (tmp instanceof Option) ? ((Option<V>) tmp) : null;
+                    return ((LNode<K, V>) m).get (k);
                 }
 
                 throw new RuntimeException ("Should not happen");
