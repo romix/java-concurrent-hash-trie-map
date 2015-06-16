@@ -1043,38 +1043,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     /* internal methods */
 
-    // private void writeObject(java.io.ObjectOutputStream out) {
-    // out.writeObject(hashf);
-    // out.writeObject(ef);
-    //
-    // Iterator it = iterator();
-    // while (it.hasNext) {
-    // val (k, v) = it.next();
-    // out.writeObject(k);
-    // out.writeObject(v);
-    // }
-    // out.writeObject(TrieMapSerializationEnd);
-    // }
-    //
-    // private TrieMap readObject(java.io.ObjectInputStream in) {
-    // root = INode.newRootNode();
-    // rootupdater = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class,
-    // Object.class, "root");
-    //
-    // hashingobj = in.readObject();
-    // equalityobj = in.readObject();
-    //
-    // Object obj = null;
-    // do {
-    // obj = in.readObject();
-    // if (obj != TrieMapSerializationEnd) {
-    // K k = (K)obj;
-    // V = (V)in.readObject();
-    // update(k, v);
-    // }
-    // } while (obj != TrieMapSerializationEnd);
-    // }
-
     final boolean CAS_ROOT (Object ov, Object nv) {
         if (isReadOnly()) {
             throw new IllegalStateException("Attempted to modify a read-only snapshot");
