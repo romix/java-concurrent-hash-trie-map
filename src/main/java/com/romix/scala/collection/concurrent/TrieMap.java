@@ -856,7 +856,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                 if (elem instanceof INode) {
                     INode<K, V> in = (INode<K, V>) elem;
                     narr [i] = in.copyToGen (ngen, ct);
-                } else if (elem instanceof BasicNode)
+                } else
                     narr [i] = elem;
                 i += 1;
             }
