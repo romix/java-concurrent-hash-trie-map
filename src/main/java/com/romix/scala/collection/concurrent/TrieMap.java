@@ -126,7 +126,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                             m = /* READ */mainnode;
                             continue;
                         }
-                    } else if (prev instanceof MainNode) {
+                    } else {
                         // Assume that you've read the root from the generation
                         // G.
                         // Assume that the snapshot algorithm is correct.
@@ -155,7 +155,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                         }
                     }
                 }
-                throw new RuntimeException ("Should not happen");
             }
         }
 
