@@ -497,8 +497,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                         else {
                             if (GCAS (cn, cn.renewed (startgen, ct), ct))
                                 res = rec_remove (k, v, hc, lev, parent, startgen, ct);
-                            else
-                                res = null;
                         }
 
                     } else if (sub instanceof SNode) {
@@ -507,8 +505,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                             MainNode<K, V> ncn = cn.removedAt (pos, flag, gen).toContracted (lev);
                             if (GCAS (cn, ncn, ct))
                                 res = Option.makeOption (sn.v);
-                            else
-                                res = null;
                         } else
                             res = Option.makeOption ();
                     }
