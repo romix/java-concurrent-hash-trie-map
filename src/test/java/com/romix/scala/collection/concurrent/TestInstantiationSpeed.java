@@ -7,7 +7,7 @@ public class TestInstantiationSpeed {
     private static final int ITERATIONS = 10;
     private static final int WARMUP = 20;
 
-    private long runIteration() {
+    private static long runIteration() {
         final TrieMap<?, ?>[] maps = new TrieMap<?, ?>[COUNT];
         final long start = System.nanoTime();
 
