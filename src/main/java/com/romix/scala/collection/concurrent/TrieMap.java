@@ -219,7 +219,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                             }
                         } else if (cnAtPos instanceof SNode) {
                             SNode<K, V> sn = (SNode<K, V>) cnAtPos;
-                            if (sn.hc == hc && equal ((K) sn.k, k, ct))
+                            if (sn.hc == hc && equal (sn.k, k, ct))
                                 return GCAS (cn, cn.updatedAt (pos, new SNode<K, V> (k, v, hc), gen), ct);
                             else {
                                 CNode<K, V> rn = (cn.gen == gen) ? cn : cn.renewed (gen, ct);
@@ -1384,14 +1384,14 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     final Option<V> removeOpt (K k) {
         int hc = computeHash (k);
-        return removehc (k, (V) null, hc);
+        return removehc (k, null, hc);
     }
 
     @Override
     final public V remove (Object k) {
         ensureReadWrite();
         int hc = computeHash ((K)k);
-        Option<V> ov = removehc ((K)k, (V) null, hc);
+        Option<V> ov = removehc ((K)k, null, hc);
         if(ov instanceof Some) {
             Some<V> sv = (Some<V>)ov;
             return sv.get();
@@ -1432,7 +1432,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     public boolean replace (K k, V oldvalue, V newvalue) {
         ensureReadWrite();
         int hc = computeHash (k);
-        return insertifhc (k, hc, newvalue, (Object) oldvalue).nonEmpty ();
+        return insertifhc (k, hc, newvalue, oldvalue).nonEmpty ();
     }
 
     public Option<V> replaceOpt (K k, V v) {
