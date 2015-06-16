@@ -818,9 +818,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
 
         final CNode<K, V> updatedAt (int pos, final BasicNode nn, final Gen gen) {
-            int len = array.length;
-            BasicNode[] narr = new BasicNode[len];
-            System.arraycopy (array, 0, narr, 0, len);
+            BasicNode[] narr = array.clone();
             narr [pos] = nn;
             return new CNode<K, V> (bitmap, narr, gen);
         }
