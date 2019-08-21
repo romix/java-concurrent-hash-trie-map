@@ -674,7 +674,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
 
         final public Map.Entry<K, V> kvPair () {
-            return new Pair<K, V> (k, v);
+            return new SimpleImmutableEntry<K, V> (k, v);
         }
 
         final public String string (int lev) {
@@ -706,8 +706,8 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
             return new SNode<K, V> (k, v, hc);
         }
 
-        final public Pair<K, V> kvPair () {
-            return new Pair<K, V> (k, v);
+        final public Entry<K, V> kvPair () {
+            return new SimpleImmutableEntry<K, V> (k, v);
         }
 
         final public int cachedSize (Object ct) {
