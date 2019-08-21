@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import com.romix.scala.None;
 import com.romix.scala.Option;
@@ -797,14 +798,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         private int computeSize (final TrieMap<K, V> ct) {
             int i = 0;
             int sz = 0;
-            // final int offset = (array.length > 0) ?
-            // // util.Random.nextInt(array.length) /* <-- benchmarks show that
-            // // this causes observable contention */
-            // scala.concurrent.forkjoin.ThreadLocalRandom.current.nextInt (0,
-            // array.length)
-            // : 0;
-
-            final int offset = 0;
+            final int offset = (array.length > 0) ? ThreadLocalRandom.current().nextInt(0, array.length) : 0;
             while (i < array.length) {
                 int pos = (i + offset) % array.length;
                 BasicNode elem = array [pos];
