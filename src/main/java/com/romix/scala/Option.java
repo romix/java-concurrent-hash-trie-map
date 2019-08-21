@@ -9,16 +9,13 @@ package com.romix.scala;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Option<V> {
-    static None none = new None();
+    private static final None NONE = new None();
     public static <V> Option<V> makeOption(V o){
-        if(o!=null)
-            return new Some<V>(o);
-        else
-            return (Option<V>)none;
+        return o != null ? new Some<V>(o) : NONE;
     }
 
     public static <V> Option<V> makeOption(){
-        return (Option<V>)none;
+        return NONE;
     }
     public boolean nonEmpty () {
         return false;

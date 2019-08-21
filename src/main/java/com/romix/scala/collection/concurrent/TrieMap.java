@@ -127,7 +127,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                             m = /* READ */mainnode;
                             continue;
                         }
-                    } else if (prev instanceof MainNode) {
+                    } else {
                         // Assume that you've read the root from the generation
                         // G.
                         // Assume that the snapshot algorithm is correct.
@@ -156,7 +156,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                         }
                     }
                 }
-                throw new RuntimeException ("Should not happen");
             }
         }
 
@@ -221,7 +220,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                             }
                         } else if (cnAtPos instanceof SNode) {
                             SNode<K, V> sn = (SNode<K, V>) cnAtPos;
-                            if (sn.hc == hc && equal ((K) sn.k, k, ct))
+                            if (sn.hc == hc && equal (sn.k, k, ct))
                                 return GCAS (cn, cn.updatedAt (pos, new SNode<K, V> (k, v, hc), gen), ct);
                             else {
                                 CNode<K, V> rn = (cn.gen == gen) ? cn : cn.renewed (gen, ct);
@@ -449,8 +448,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                     return cleanReadOnly ((TNode<K, V>) m, lev, parent, ct, k, hc);
                 } else if (m instanceof LNode) {
                     // 5) an l-node
-                    Option<V> tmp = ((LNode<K, V>) m).get (k);
-                    return (tmp instanceof Option) ? ((Option<V>) tmp) : null;
+                    return ((LNode<K, V>) m).get (k);
                 }
 
                 throw new RuntimeException ("Should not happen");
@@ -500,8 +498,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                         else {
                             if (GCAS (cn, cn.renewed (startgen, ct), ct))
                                 res = rec_remove (k, v, hc, lev, parent, startgen, ct);
-                            else
-                                res = null;
                         }
 
                     } else if (sub instanceof SNode) {
@@ -510,8 +506,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                             MainNode<K, V> ncn = cn.removedAt (pos, flag, gen).toContracted (lev);
                             if (GCAS (cn, ncn, ct))
                                 res = Option.makeOption (sn.v);
-                            else
-                                res = null;
                         } else
                             res = Option.makeOption ();
                     }
@@ -812,9 +806,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
         }
 
         final CNode<K, V> updatedAt (int pos, final BasicNode nn, final Gen gen) {
-            int len = array.length;
-            BasicNode[] narr = new BasicNode[len];
-            System.arraycopy (array, 0, narr, 0, len);
+            BasicNode[] narr = array.clone();
             narr [pos] = nn;
             return new CNode<K, V> (bitmap, narr, gen);
         }
@@ -852,7 +844,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                 if (elem instanceof INode) {
                     INode<K, V> in = (INode<K, V>) elem;
                     narr [i] = in.copyToGen (ngen, ct);
-                } else if (elem instanceof BasicNode)
+                } else
                     narr [i] = elem;
                 i += 1;
             }
@@ -1044,38 +1036,6 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     }
 
     /* internal methods */
-
-    // private void writeObject(java.io.ObjectOutputStream out) {
-    // out.writeObject(hashf);
-    // out.writeObject(ef);
-    //
-    // Iterator it = iterator();
-    // while (it.hasNext) {
-    // val (k, v) = it.next();
-    // out.writeObject(k);
-    // out.writeObject(v);
-    // }
-    // out.writeObject(TrieMapSerializationEnd);
-    // }
-    //
-    // private TrieMap readObject(java.io.ObjectInputStream in) {
-    // root = INode.newRootNode();
-    // rootupdater = AtomicReferenceFieldUpdater.newUpdater(TrieMap.class,
-    // Object.class, "root");
-    //
-    // hashingobj = in.readObject();
-    // equalityobj = in.readObject();
-    //
-    // Object obj = null;
-    // do {
-    // obj = in.readObject();
-    // if (obj != TrieMapSerializationEnd) {
-    // K k = (K)obj;
-    // V = (V)in.readObject();
-    // update(k, v);
-    // }
-    // } while (obj != TrieMapSerializationEnd);
-    // }
 
     final boolean CAS_ROOT (Object ov, Object nv) {
         if (isReadOnly()) {
@@ -1381,14 +1341,14 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
 
     final Option<V> removeOpt (K k) {
         int hc = computeHash (k);
-        return removehc (k, (V) null, hc);
+        return removehc (k, null, hc);
     }
 
     @Override
     final public V remove (Object k) {
         ensureReadWrite();
         int hc = computeHash ((K)k);
-        Option<V> ov = removehc ((K)k, (V) null, hc);
+        Option<V> ov = removehc ((K)k, null, hc);
         if(ov instanceof Some) {
             Some<V> sv = (Some<V>)ov;
             return sv.get();
@@ -1429,7 +1389,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
     public boolean replace (K k, V oldvalue, V newvalue) {
         ensureReadWrite();
         int hc = computeHash (k);
-        return insertifhc (k, hc, newvalue, (Object) oldvalue).nonEmpty ();
+        return insertifhc (k, hc, newvalue, oldvalue).nonEmpty ();
     }
 
     public Option<V> replaceOpt (K k, V v) {
@@ -1565,11 +1525,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                 }
                 
                 lastReturned = r;
-                if(r instanceof Map.Entry) {
-                    final Map.Entry<K, V> rr = (Map.Entry<K, V>)r;
-                    return nextEntry(rr);
-                }
-                return r;
+                return r != null ? nextEntry(r) : null;
             } else {
                 // return Iterator.empty ().next ();
                 return null;
