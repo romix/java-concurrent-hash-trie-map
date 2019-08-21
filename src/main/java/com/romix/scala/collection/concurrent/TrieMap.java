@@ -461,7 +461,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                 clean (parent, ct, lev - 5);
                 return RESTART; // used to be throw RestartException
             } else {
-                if (tn.hc == hc && tn.k == k)
+                if (tn.hc == hc && equal(tn.k, k, ct))
                     return tn.v;
                 else
                     return null;
