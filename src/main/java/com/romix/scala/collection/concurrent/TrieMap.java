@@ -359,7 +359,7 @@ public class TrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K,
                             return null;
                     } else if (cond == INode.KEY_ABSENT) {
                         Option<V> t = ln.get (k);
-                        if (t == null) {
+                        if (t == null || t instanceof None) {
                             if (insertln (ln, k, v, ct))
                                 return Option.makeOption ();// None
                             else
